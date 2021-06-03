@@ -54,12 +54,33 @@
 	function wsEvt() {
 		ws.onopen = function(data){
 			//소켓이 열리면 초기화 세팅하기
+// 			ws.send('"'+$("#userName").val() +'"'+ "님이 접속하였습니다.")
 		}
 		
 		ws.onmessage = function(data) {
+			// 메세지 받으면 동작
 			var msg = data.data;
 			if(msg != null && msg.trim() != ''){
-				$("#chating").append("<p>" + msg + "</p>");
+				var d = JSON.parse(msg);
+				//맨처음 소켓이 열리면 type이 getId임. 
+				if(d.type == "getId"){
+					//sessionId 입력
+					var si = d.sessionId != null ? d.sessionId : "";
+					if(si != ''){
+						$("#sessionId").val(si);
+					}
+				//채팅에 메세지 입력하면 JSONObject형태로 바로옴 type은 message
+				//{"msg":"안녕하세요","type":"message","userName":"사용자"}
+				}else if(d.type == "message"){
+					if(d.sessionId == $("#sessionId").val()){
+						$("#chating").append("<p class='me'>나 : "+d.msg+"</p>");
+					}else{
+						$("#chating").append("<p class='others'>"+d.userName + " : " + d.msg +"</p>");
+					}
+				}else{
+					console.warn();
+				}
+// 				$("#chating").append("<p>" + msg + "</p>");
 			}
 		}
 
@@ -83,15 +104,29 @@
 	}
 
 	function send() {
-		var uN = $("#userName").val();
 		var msg = $("#chatting").val();
-		ws.send(uN+" : "+msg);
-		$('#chatting').val("");
+		var option = {
+				type: "message",
+				sessionId: $("#sessionId").val(),
+				userName: $("#userName").val(),
+				msg: $("#chatting").val()
+		};
+		if(msg == null || msg.trim() ==""){
+			return;
+		} else {
+// 			ws.send(uN+" : "+msg);
+			ws.send(JSON.stringify(option));
+			$('#chatting').val("");
+		}
+// 		$('#chatting').val("");
+		
+// 		var uN = $("#userName").val();
 	}
 </script>
 <body>
 	<div id="container" class="container">
 		<h1>채팅</h1>
+		<input type="hidden" id="sessionId" value="">
 		<div id="chating" class="chating">
 		</div>
 		
